@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Family Santa Helper</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0b1120;
+      --card-bg: #111827;
+      --accent: #f97316;
+      --accent-soft: rgba(249, 115, 22, 0.15);
+      --text: #f9fafb;
+      --muted: #9ca3af;
+      --danger: #ef4444;
+      --nice: #22c55e;
+      --naughty: #ef4444;
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: radial-gradient(circle at top, #1f2933, var(--bg));
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px 12px 32px;
+    }
+
+    header.app-header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .app-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .app-subtitle {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 16px 14px 18px;
+      box-shadow: 0 18px 35px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .section-subtitle {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--muted);
+    }
+
+    .chip-nice {
+      border-color: rgba(34, 197, 94, 0.6);
+      color: var(--nice);
+    }
+
+    .chip-naughty {
+      border-color: rgba(239, 68, 68, 0.6);
+      color: var(--naughty);
+    }
+
+    .field {
+      margin-bottom: 10px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.85rem;
+      margin-bottom: 4px;
+    }
+
+    .input,
+    .textarea,
+    select {
+      width: 100%;
+      padding: 8px 9px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .input:focus,
+    .textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.6);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 9px 10px;
+      border-radius: 999px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      background: var(--accent);
+      color: #111827;
+      transition: transform 0.1s ease, box-shadow 0.1s ease,
+        background 0.1s ease, opacity 0.1s ease;
+      box-shadow: 0 8px 18px rgba(249, 115, 22, 0.35);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(249, 115, 22, 0.45);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      box-shadow: none;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fef2f2;
+      box-shadow: 0 8px 18px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-small {
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .user-pill {
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .user-pill span {
+      max-width: 160px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .status {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      padding: 6px 9px;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--muted);
+    }
+
+    .status.ok {
+      border-color: rgba(34, 197, 94, 0.6);
+      color: var(--nice);
+    }
+
+    .status.error {
+      border-color: rgba(239, 68, 68, 0.6);
+      color: var(--danger);
+    }
+
+    .menu-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .menu-item {
+      padding: 9px 11px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      transition: background 0.1s ease, transform 0.1s ease,
+        box-shadow 0.1s ease;
+    }
+
+    .menu-item:hover {
+      background: rgba(15, 23, 42, 1);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .menu-item-title {
+      font-weight: 500;
+    }
+
+    .menu-item-sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .menu-item-arrow {
+      font-size: 1rem;
+      opacity: 0.8;
+    }
+
+    .list {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 360px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .list-item {
+      padding: 9px 10px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      font-size: 0.88rem;
+    }
+
+    .list-item.clickable {
+      cursor: pointer;
+      transition: background 0.1s ease, transform 0.1s ease,
+        box-shadow 0.1s ease;
+    }
+
+    .list-item.clickable:hover {
+      background: rgba(15, 23, 42, 1);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .list-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .list-title {
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .list-badge {
+      font-size: 0.7rem;
+      padding: 1px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+    }
+
+    .list-meta {
+      margin-top: 4px;
+      font-size: 0.77rem;
+      color: var(--muted);
+    }
+
+    .list-desc {
+      margin-top: 6px;
+      font-size: 0.82rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .wish-footer {
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      color: var(--muted);
+    }
+
+    .tag-granted {
+      border-color: rgba(34, 197, 94, 0.6);
+      color: var(--nice);
+    }
+
+    .tag-ungranted {
+      border-color: rgba(249, 115, 22, 0.7);
+      color: var(--accent);
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    @media (min-width: 600px) {
+      .app {
+        padding-top: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <div class="app-title">Santa’s Family Helper</div>
+      <div class="app-subtitle">Share wishes, grant gifts, and keep the list in line 🎄</div>
+    </header>
+
+    <div class="card">
+      <div class="top-bar">
+        <div id="current-user-pill" class="user-pill" style="display:none;">
+          <span id="current-user-name"></span>
+        </div>
+        <button id="btn-logout" class="btn-small btn-secondary" style="display:none;">
+          Log out
+        </button>
+      </div>
+
+      <!-- LOGIN VIEW -->
+      <section id="view-login" class="view active">
+        <h2 class="section-title">Welcome back</h2>
+        <p class="section-subtitle">
+          Log in with your name and a password. If we don’t know you yet, we’ll create a spot for you on Santa’s list.
+        </p>
+
+        <div class="field">
+          <label for="login-name">Name</label>
+          <input id="login-name" class="input" type="text" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input id="login-password" class="input" type="password" />
+        </div>
+
+        <div class="btn-row">
+          <button id="btn-login" class="btn">Enter the workshop</button>
+        </div>
+
+        <div id="login-status" class="status" style="display:none;"></div>
+      </section>
+
+      <!-- ROUTER VIEW -->
+      <section id="view-router" class="view">
+        <h2 class="section-title">What would you like to do?</h2>
+        <p class="section-subtitle">
+          Choose an activity below. You can always come back to this menu.
+        </p>
+        <div class="menu-list">
+          <div id="link-write" class="menu-item">
+            <div>
+              <div class="menu-item-title">Write a letter to Santa</div>
+              <div class="menu-item-sub">Add a new wish to your list</div>
+            </div>
+            <div class="menu-item-arrow">✉️</div>
+          </div>
+          <div id="link-santa-list" class="menu-item">
+            <div>
+              <div class="menu-item-title">Check Santa’s list</div>
+              <div class="menu-item-sub">See everyone’s wish lists and vote Naughty or Nice</div>
+            </div>
+            <div class="menu-item-arrow">📜</div>
+          </div>
+          <div id="link-bag" class="menu-item">
+            <div>
+              <div class="menu-item-title">Check my bag</div>
+              <div class="menu-item-sub">See all the gifts you’ve promised to cover</div>
+            </div>
+            <div class="menu-item-arrow">🎁</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- WRITE LETTER VIEW -->
+      <section id="view-write" class="view">
+        <h2 class="section-title">Write a letter to Santa</h2>
+        <p class="section-subtitle">
+          Add a new wish to your personal list. Make the title short and the description as detailed as you like.
+        </p>
+
+        <div class="field">
+          <label for="gift-title">Title</label>
+          <input id="gift-title" class="input" type="text" placeholder="Nintendo game, warm socks, cookbook..." />
+        </div>
+        <div class="field">
+          <label for="gift-description">Description</label>
+          <textarea id="gift-description" class="textarea" placeholder="Extra details, links, sizes, colors, anything helpful."></textarea>
+        </div>
+
+        <div class="btn-row">
+          <button id="btn-submit-gift" class="btn">Submit wish</button>
+          <button id="btn-back-from-write" class="btn btn-secondary">Back</button>
+        </div>
+
+        <div id="write-status" class="status" style="display:none;"></div>
+      </section>
+
+      <!-- SANTA'S LIST - ALL USERS -->
+      <section id="view-users" class="view">
+        <h2 class="section-title">Santa’s list</h2>
+        <p class="section-subtitle">
+          Tap a name to see their wishes, grant gifts, and mark them Naughty or Nice.
+        </p>
+
+        <div class="btn-row" style="margin-bottom:6px;">
+          <button id="btn-refresh-users" class="btn-secondary btn-small" style="flex:none;">
+            Refresh list
+          </button>
+          <button id="btn-back-from-users" class="btn-secondary btn-small" style="flex:none;">
+            Back
+          </button>
+        </div>
+
+        <div id="users-list" class="list"></div>
+        <div id="users-empty" class="muted" style="display:none; margin-top:10px;">
+          No users yet. Once people log in, they’ll appear here.
+        </div>
+
+        <div id="users-status" class="status" style="display:none;"></div>
+      </section>
+
+      <!-- INDIVIDUAL USER WISH LIST -->
+      <section id="view-user-list" class="view">
+        <div class="section-title">
+          <span id="user-list-name">User’s wishes</span>
+          <span id="user-list-chip" class="chip">Nice by default</span>
+        </div>
+        <p class="section-subtitle">
+          Grant wishes from this list, and cast your Naughty/Nice vote for this person.
+        </p>
+
+        <div class="btn-row" style="margin-bottom:6px;">
+          <button id="btn-mark-nice" class="btn-secondary btn-small" style="flex:1;">
+            Mark as Nice
+          </button>
+          <button id="btn-mark-naughty" class="btn-secondary btn-small" style="flex:1;">
+            Mark as Naughty
+          </button>
+        </div>
+
+        <div class="btn-row" style="margin-bottom:4px;">
+          <button id="btn-back-from-user-list" class="btn-secondary btn-small" style="flex:1;">
+            Back to names
+          </button>
+        </div>
+
+        <div id="user-gifts-list" class="list"></div>
+        <div id="user-gifts-empty" class="muted" style="display:none; margin-top:10px;">
+          No wishes yet for this person.
+        </div>
+
+        <div id="user-list-status" class="status" style="display:none;"></div>
+      </section>
+
+      <!-- MY BAG VIEW -->
+      <section id="view-bag" class="view">
+        <h2 class="section-title">My bag</h2>
+        <p class="section-subtitle">
+          These are the gifts you’ve agreed to cover. You can use this as your own little shopping checklist.
+        </p>
+
+        <div class="btn-row" style="margin-bottom:6px;">
+          <button id="btn-refresh-bag" class="btn-secondary btn-small" style="flex:none;">
+            Refresh
+          </button>
+          <button id="btn-back-from-bag" class="btn-secondary btn-small" style="flex:none;">
+            Back
+          </button>
+        </div>
+
+        <div id="bag-list" class="list"></div>
+        <div id="bag-empty" class="muted" style="display:none; margin-top:10px;">
+          Your bag is empty for now. Once you grant a wish, it will appear here.
+        </div>
+
+        <div id="bag-status" class="status" style="display:none;"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ============================
+    // CONFIG
+    // ============================
+    const API_BASE =
+      "https://script.google.com/macros/s/AKfycbz7eqAMU0WhAScu4DKF_iG92osNVZwfRmBctZniY7vFqGon4PAE1CsCe8IFjX3ZIGleIg/exec";
+
+    const STORAGE_USER_ID_KEY = "santa_app_user_id";
+    const STORAGE_USER_NAME_KEY = "santa_app_user_name";
+
+    let currentUser = null; // { user_id, user_name }
+    let usersCache = []; // full users list for name lookups & naughty/nice
+    let currentTargetUser = null; // { user_id, user_name }
+
+    // ============================
+    // UTILS: API
+    // ============================
+    async function apiGet(action, params = {}) {
+      const q = new URLSearchParams({ action, ...params });
+      const res = await fetch(API_BASE + "?" + q.toString(), {
+        method: "GET",
+      });
+      return res.json();
+    }
+
+    async function apiPost(action, body) {
+      const res = await fetch(API_BASE + "?action=" + encodeURIComponent(action), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...body }),
+      });
+      return res.json();
+    }
+
+    // ============================
+    // UTILS: VIEWS & STATUS
+    // ============================
+    function showView(id) {
+      document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+      const el = document.getElementById(id);
+      if (el) el.classList.add("active");
+
+      const headerPill = document.getElementById("current-user-pill");
+      const logoutBtn = document.getElementById("btn-logout");
+      if (currentUser && id !== "view-login") {
+        headerPill.style.display = "inline-flex";
+        logoutBtn.style.display = "inline-flex";
+        document.getElementById("current-user-name").textContent =
+          currentUser.user_name || "Unknown";
+      } else {
+        headerPill.style.display = "none";
+        logoutBtn.style.display = "none";
+      }
+    }
+
+    function setStatus(el, message, type = "info") {
+      if (!el) return;
+      if (!message) {
+        el.style.display = "none";
+        el.textContent = "";
+        el.classList.remove("ok", "error");
+        return;
+      }
+      el.style.display = "block";
+      el.textContent = message;
+      el.classList.remove("ok", "error");
+      if (type === "ok") el.classList.add("ok");
+      if (type === "error") el.classList.add("error");
+    }
+
+    function requireLoginOrRedirect() {
+      if (!currentUser) {
+        showView("view-login");
+        setStatus(
+          document.getElementById("login-status"),
+          "Please log in to continue.",
+          "error"
+        );
+        return false;
+      }
+      return true;
+    }
+
+    // ============================
+    // LOGIN LOGIC
+    // ============================
+    async function handleLogin() {
+      const nameInput = document.getElementById("login-name");
+      const passInput = document.getElementById("login-password");
+      const statusEl = document.getElementById("login-status");
+
+      const userName = (nameInput.value || "").trim();
+      const password = passInput.value || "";
+
+      if (!userName || !password) {
+        setStatus(statusEl, "Please enter both name and password.", "error");
+        return;
+      }
+
+      setStatus(statusEl, "Checking the list...", "info");
+
+      try {
+        const result = await apiPost("loginOrCreateUser", {
+          userName,
+          password,
+        });
+
+        if (!result.success) {
+          if (result.error === "wrong_password") {
+            setStatus(
+              statusEl,
+              "That password doesn’t match what we have for this name.",
+              "error"
+            );
+          } else {
+            setStatus(
+              statusEl,
+              "Could not log in right now. Please try again.",
+              "error"
+            );
+          }
+          return;
+        }
+
+        currentUser = {
+          user_id: result.user.user_id,
+          user_name: result.user.user_name,
+        };
+
+        localStorage.setItem(STORAGE_USER_ID_KEY, currentUser.user_id);
+        localStorage.setItem(STORAGE_USER_NAME_KEY, currentUser.user_name);
+
+        const mode = result.mode === "created" ? "created you a new spot!" : "logged you in!";
+        setStatus(statusEl, "Success – " + mode, "ok");
+
+        nameInput.value = "";
+        passInput.value = "";
+
+        showView("view-router");
+      } catch (err) {
+        console.error(err);
+        setStatus(
+          statusEl,
+          "Something went wrong talking to Santa’s servers. Try again in a moment.",
+          "error"
+        );
+      }
+    }
+
+    function initFromStorage() {
+      const id = localStorage.getItem(STORAGE_USER_ID_KEY);
+      const name = localStorage.getItem(STORAGE_USER_NAME_KEY);
+      if (id && name) {
+        currentUser = { user_id: id, user_name: name };
+        showView("view-router");
+      } else {
+        showView("view-login");
+      }
+    }
+
+    function handleLogout() {
+      currentUser = null;
+      currentTargetUser = null;
+      localStorage.removeItem(STORAGE_USER_ID_KEY);
+      localStorage.removeItem(STORAGE_USER_NAME_KEY);
+      showView("view-login");
+      setStatus(
+        document.getElementById("login-status"),
+        "You’ve been logged out.",
+        "info"
+      );
+    }
+
+    // ============================
+    // WRITE LETTER LOGIC
+    // ============================
+    async function handleSubmitGift() {
+      if (!requireLoginOrRedirect()) return;
+
+      const titleInput = document.getElementById("gift-title");
+      const descInput = document.getElementById("gift-description");
+      const statusEl = document.getElementById("write-status");
+
+      const title = (titleInput.value || "").trim();
+      const description = (descInput.value || "").trim();
+
+      if (!title || !description) {
+        setStatus(statusEl, "Please fill in both title and description.", "error");
+        return;
+      }
+
+      setStatus(statusEl, "Sending your wish up the chimney...", "info");
+
+      try {
+        const result = await apiPost("createGift", {
+          requestingUserId: currentUser.user_id,
+          title,
+          description,
+        });
+
+        if (!result.success) {
+          setStatus(
+            statusEl,
+            "Could not save that wish. Please try again.",
+            "error"
+          );
+          return;
+        }
+
+        setStatus(statusEl, "Wish submitted! You can add another if you like.", "ok");
+        titleInput.value = "";
+        descInput.value = "";
+      } catch (err) {
+        console.error(err);
+        setStatus(
+          statusEl,
+          "Something went wrong talking to Santa’s servers. Try again in a moment.",
+          "error"
+        );
+      }
+    }
+
+    // ============================
+    // SANTA'S LIST (ALL USERS)
+    // ============================
+    function computeNiceNaughtyFromVotes(voteListString) {
+      if (!voteListString || String(voteListString).trim() === "") {
+        return { label: "Nice", isNice: true };
+      }
+      let arr;
+      try {
+        arr = JSON.parse(voteListString);
+        if (!Array.isArray(arr)) arr = [];
+      } catch (e) {
+        arr = [];
+      }
+      let nice = 0;
+      let naughty = 0;
+      for (const v of arr) {
+        if (!v || !v.vote) continue;
+        const vote = String(v.vote).toLowerCase();
+        if (vote === "nice") nice++;
+        else if (vote === "naughty") naughty++;
+      }
+      if (nice === naughty) {
+        return { label: "Nice", isNice: true };
+      }
+      return nice > naughty
+        ? { label: "Nice", isNice: true }
+        : { label: "Naughty", isNice: false };
+    }
+
+    async function loadUsers() {
+      if (!requireLoginOrRedirect()) return;
+
+      const listEl = document.getElementById("users-list");
+      const emptyEl = document.getElementById("users-empty");
+      const statusEl = document.getElementById("users-status");
+
+      setStatus(statusEl, "Loading Santa’s list...", "info");
+      listEl.innerHTML = "";
+      emptyEl.style.display = "none";
+
+      try {
+        const result = await apiGet("getUsers");
+        if (!result.success) {
+          setStatus(
+            statusEl,
+            "Could not load the list of users. Please try again.",
+            "error"
+          );
+          return;
+        }
+
+        usersCache = result.users || [];
+        setStatus(statusEl, "", "info");
+
+        if (!usersCache.length) {
+          emptyEl.style.display = "block";
+          return;
+        }
+
+        usersCache.sort((a, b) =>
+          String(a.user_name || "").localeCompare(String(b.user_name || ""))
+        );
+
+        for (const user of usersCache) {
+          const niceInfo = computeNiceNaughtyFromVotes(
+            user.nice_naughty_vote_list
+          );
+
+          const item = document.createElement("div");
+          item.className = "list-item clickable";
+          item.dataset.userId = user.user_id;
+
+          const titleRow = document.createElement("div");
+          titleRow.className = "list-title-row";
+
+          const title = document.createElement("div");
+          title.className = "list-title";
+          title.textContent = user.user_name || "(no name)";
+
+          const badge = document.createElement("div");
+          badge.className =
+            "list-badge " + (niceInfo.isNice ? "chip-nice" : "chip-naughty");
+          badge.textContent = niceInfo.isNice ? "Nice" : "Naughty";
+
+          titleRow.appendChild(title);
+          titleRow.appendChild(badge);
+
+          const meta = document.createElement("div");
+          meta.className = "list-meta";
+          meta.textContent = "Tap to see wishes & vote.";
+
+          item.appendChild(titleRow);
+          item.appendChild(meta);
+
+          item.addEventListener("click", () => {
+            openUserList(user.user_id);
+          });
+
+          listEl.appendChild(item);
+        }
+      } catch (err) {
+        console.error(err);
+        setStatus(
+          statusEl,
+          "Something went wrong loading Santa’s list.",
+          "error"
+        );
+      }
+    }
+
+    // ============================
+    // INDIVIDUAL USER WISH LIST
+    // ============================
+    async function openUserList(userId) {
+      if (!requireLoginOrRedirect()) return;
+
+      const user = usersCache.find((u) => String(u.user_id) === String(userId));
+      if (!user) {
+        // Fallback: if not in cache, just fake a name
+        currentTargetUser = { user_id: userId, user_name: "Unknown friend" };
+      } else {
+        currentTargetUser = {
+          user_id: user.user_id,
+          user_name: user.user_name,
+        };
+      }
+
+      const nameEl = document.getElementById("user-list-name");
+      const chipEl = document.getElementById("user-list-chip");
+      const statusEl = document.getElementById("user-list-status");
+      nameEl.textContent = currentTargetUser.user_name + "’s wishes";
+
+      // Compute naughty/nice from latest cache if available
+      if (user) {
+        const niceInfo = computeNiceNaughtyFromVotes(
+          user.nice_naughty_vote_list
+        );
+        chipEl.textContent = niceInfo.isNice ? "Nice" : "Naughty";
+        chipEl.classList.remove("chip-nice", "chip-naughty");
+        chipEl.classList.add(niceInfo.isNice ? "chip-nice" : "chip-naughty");
+      } else {
+        chipEl.textContent = "Nice by default";
+        chipEl.classList.remove("chip-nice", "chip-naughty");
+      }
+
+      setStatus(statusEl, "", "info");
+      showView("view-user-list");
+      await loadUserGifts();
+    }
+
+    async function loadUserGifts() {
+      const listEl = document.getElementById("user-gifts-list");
+      const emptyEl = document.getElementById("user-gifts-empty");
+      const statusEl = document.getElementById("user-list-status");
+
+      if (!currentTargetUser) return;
+
+      setStatus(statusEl, "Loading wishes...", "info");
+      listEl.innerHTML = "";
+      emptyEl.style.display = "none";
+
+      try {
+        const result = await apiGet("getGiftsForRequester", {
+          requestingUserId: currentTargetUser.user_id,
+        });
+
+        if (!result.success) {
+          setStatus(
+            statusEl,
+            "Could not load this wish list. Please try again.",
+            "error"
+          );
+          return;
+        }
+
+        const gifts = result.gifts || [];
+        setStatus(statusEl, "", "info");
+
+        if (!gifts.length) {
+          emptyEl.style.display = "block";
+          return;
+        }
+
+        for (const g of gifts) {
+          const item = document.createElement("div");
+          item.className = "list-item";
+
+          const titleRow = document.createElement("div");
+          titleRow.className = "list-title-row";
+
+          const title = document.createElement("div");
+          title.className = "list-title";
+          title.textContent = g.gift_title || "(no title)";
+
+          const statusTag = document.createElement("div");
+          statusTag.className =
+            "tag " +
+            (String(g.is_granted) === "granted"
+              ? "tag-granted"
+              : "tag-ungranted");
+          statusTag.textContent =
+            String(g.is_granted) === "granted" ? "Granted" : "Unfulfilled";
+
+          titleRow.appendChild(title);
+          titleRow.appendChild(statusTag);
+
+          const desc = document.createElement("div");
+          desc.className = "list-desc";
+          desc.textContent = g.gift_description || "";
+
+          const footer = document.createElement("div");
+          footer.className = "wish-footer";
+
+          const idTag = document.createElement("div");
+          idTag.className = "tag";
+          idTag.textContent = "ID: " + g.gift_id;
+
+          footer.appendChild(idTag);
+
+          if (String(g.is_granted) === "ungranted") {
+            const btn = document.createElement("button");
+            btn.className = "btn-small btn-secondary";
+            btn.textContent = "Grant this wish";
+
+            btn.addEventListener("click", async () => {
+              const confirmed = window.confirm(
+                "Granting this wish is permanent. Are you sure you want to grant it?"
+              );
+              if (!confirmed) return;
+
+              try {
+                const res = await apiPost("grantGift", {
+                  giftId: g.gift_id,
+                  grantingUserId: currentUser.user_id,
+                });
+                if (!res.success) {
+                  alert(
+                    "Could not grant that wish. You may need to try again or refresh."
+                  );
+                  return;
+                }
+                await loadUserGifts();
+              } catch (err) {
+                console.error(err);
+                alert("Something went wrong while granting that wish.");
+              }
+            });
+
+            footer.appendChild(btn);
+          } else {
+            const who = document.createElement("div");
+            who.className = "muted";
+            who.textContent = g.granting_user_id
+              ? "Covered by: " + g.granting_user_id
+              : "Already granted.";
+            footer.appendChild(who);
+          }
+
+          item.appendChild(titleRow);
+          item.appendChild(desc);
+          item.appendChild(footer);
+
+          listEl.appendChild(item);
+        }
+      } catch (err) {
+        console.error(err);
+        setStatus(
+          statusEl,
+          "Something went wrong loading wishes.",
+          "error"
+        );
+      }
+    }
+
+    async function handleVote(vote) {
+      if (!currentTargetUser || !currentUser) return;
+      const statusEl = document.getElementById("user-list-status");
+      setStatus(statusEl, "Saving your vote...", "info");
+
+      try {
+        const res = await apiPost("voteNiceNaughty", {
+          targetUserId: currentTargetUser.user_id,
+          voterUserId: currentUser.user_id,
+          vote,
+        });
+
+        if (!res.success) {
+          setStatus(
+            statusEl,
+            "Could not save that vote. Please try again.",
+            "error"
+          );
+          return;
+        }
+
+        // Update usersCache with new data
+        if (res.user) {
+          const idx = usersCache.findIndex(
+            (u) => String(u.user_id) === String(res.user.user_id)
+          );
+          if (idx >= 0) {
+            usersCache[idx] = res.user;
+          } else {
+            usersCache.push(res.user);
+          }
+        }
+
+        // Recompute label
+        const chipEl = document.getElementById("user-list-chip");
+        const updatedUser =
+          usersCache.find(
+            (u) =>
+              String(u.user_id) === String(currentTargetUser.user_id)
+          ) || res.user;
+
+        if (updatedUser) {
+          const niceInfo = computeNiceNaughtyFromVotes(
+            updatedUser.nice_naughty_vote_list
+          );
+          chipEl.textContent = niceInfo.isNice ? "Nice" : "Naughty";
+          chipEl.classList.remove("chip-nice", "chip-naughty");
+          chipEl.classList.add(
+            niceInfo.isNice ? "chip-nice" : "chip-naughty"
+          );
+        }
+
+        setStatus(statusEl, "Your vote has been saved.", "ok");
+      } catch (err) {
+        console.error(err);
+        setStatus(
+          statusEl,
+          "Something went wrong while saving your vote.",
+          "error"
+        );
+      }
+    }
+
+    // ============================
+    // MY BAG LOGIC
+    // ============================
+    async function loadBag() {
+      if (!requireLoginOrRedirect()) return;
+
+      const listEl = document.getElementById("bag-list");
+      const emptyEl = document.getElementById("bag-empty");
+      const statusEl = document.getElementById("bag-status");
+
+      setStatus(statusEl, "Checking your bag...", "info");
+      listEl.innerHTML = "";
+      emptyEl.style.display = "none";
+
+      try {
+        const result = await apiGet("getGiftsForGranter", {
+          grantingUserId: currentUser.user_id,
+        });
+
+        if (!result.success) {
+          setStatus(
+            statusEl,
+            "Could not load your bag. Please try again.",
+            "error"
+          );
+          return;
+        }
+
+        const gifts = result.gifts || [];
+        setStatus(statusEl, "", "info");
+
+        if (!gifts.length) {
+          emptyEl.style.display = "block";
+          return;
+        }
+
+        // Ensure we have usersCache for name lookup
+        if (!usersCache.length) {
+          const usersResult = await apiGet("getUsers");
+          if (usersResult.success) {
+            usersCache = usersResult.users || [];
+          }
+        }
+
+        const userNameById = (id) => {
+          const u = usersCache.find((u) => String(u.user_id) === String(id));
+          return u ? u.user_name : id || "Unknown";
+        };
+
+        for (const g of gifts) {
+          const item = document.createElement("div");
+          item.className = "list-item";
+
+          const titleRow = document.createElement("div");
+          titleRow.className = "list-title-row";
+
+          const title = document.createElement("div");
+          title.className = "list-title";
+          title.textContent = g.gift_title || "(no title)";
+
+          const badge = document.createElement("div");
+          badge.className = "list-badge chip-nice";
+          badge.textContent = "In your bag";
+
+          titleRow.appendChild(title);
+          titleRow.appendChild(badge);
+
+          const desc = document.createElement("div");
+          desc.className = "list-desc";
+          desc.textContent = g.gift_description || "";
+
+          const meta = document.createElement("div");
+          meta.className = "list-meta";
+          meta.textContent =
+            "For: " + userNameById(g.requesting_user_id);
+
+          item.appendChild(titleRow);
+          item.appendChild(meta);
+          item.appendChild(desc);
+
+          listEl.appendChild(item);
+        }
+      } catch (err) {
+        console.error(err);
+        setStatus(
+          statusEl,
+          "Something went wrong loading your bag.",
+          "error"
+        );
+      }
+    }
+
+    // ============================
+    // EVENT WIRING
+    // ============================
+    document.addEventListener("DOMContentLoaded", () => {
+      // Login
+      document.getElementById("btn-login").addEventListener("click", handleLogin);
+      document
+        .getElementById("login-password")
+        .addEventListener("keyup", (e) => {
+          if (e.key === "Enter") handleLogin();
+        });
+      document
+        .getElementById("login-name")
+        .addEventListener("keyup", (e) => {
+          if (e.key === "Enter") handleLogin();
+        });
+
+      document
+        .getElementById("btn-logout")
+        .addEventListener("click", handleLogout);
+
+      // Router links
+      document.getElementById("link-write").addEventListener("click", () => {
+        if (!requireLoginOrRedirect()) return;
+        showView("view-write");
+        setStatus(document.getElementById("write-status"), "", "info");
+      });
+
+      document
+        .getElementById("link-santa-list")
+        .addEventListener("click", () => {
+          if (!requireLoginOrRedirect()) return;
+          showView("view-users");
+          loadUsers();
+        });
+
+      document.getElementById("link-bag").addEventListener("click", () => {
+        if (!requireLoginOrRedirect()) return;
+        showView("view-bag");
+        loadBag();
+      });
+
+      // Back buttons
+      document
+        .getElementById("btn-back-from-write")
+        .addEventListener("click", () => {
+          showView("view-router");
+        });
+
+      document
+        .getElementById("btn-back-from-users")
+        .addEventListener("click", () => {
+          showView("view-router");
+        });
+
+      document
+        .getElementById("btn-back-from-user-list")
+        .addEventListener("click", () => {
+          showView("view-users");
+        });
+
+      document
+        .getElementById("btn-back-from-bag")
+        .addEventListener("click", () => {
+          showView("view-router");
+        });
+
+      // Write view
+      document
+        .getElementById("btn-submit-gift")
+        .addEventListener("click", handleSubmitGift);
+
+      // Users view actions
+      document
+        .getElementById("btn-refresh-users")
+        .addEventListener("click", loadUsers);
+
+      // User list view actions
+      document
+        .getElementById("btn-mark-nice")
+        .addEventListener("click", () => handleVote("nice"));
+      document
+        .getElementById("btn-mark-naughty")
+        .addEventListener("click", () => handleVote("naughty"));
+
+      // Bag view actions
+      document
+        .getElementById("btn-refresh-bag")
+        .addEventListener("click", loadBag);
+
+      // Start app
+      initFromStorage();
+    });
+  </script>
+</body>
+</html>
