@@ -596,16 +596,29 @@
       return res.json();
     }
 
-    async function apiPost(action, body) {
-      const res = await fetch(API_BASE + "?action=" + encodeURIComponent(action), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ...body }),
-      });
-      return res.json();
-    }
+async function apiPost(action, body) {
+  const res = await fetch(API_BASE + "?action=" + encodeURIComponent(action), {
+    method: "POST",
+    redirect: "follow", // important for the script.googleusercontent redirect
+    headers: {
+      // text/plain keeps this a "simple" request and avoids CORS preflight
+      "Content-Type": "text/plain;charset=utf-8",
+    },
+    // body is still JSON, just labeled as plain text
+    body: JSON.stringify(body),
+  });
+
+  // Read as text first, then parse JSON
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("Failed to parse JSON from API for action:", action);
+    console.error("Raw response text:", text);
+    throw err;
+  }
+}
+
 
     // ============================
     // UTILS: VIEWS & STATUS
