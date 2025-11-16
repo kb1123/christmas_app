@@ -33,6 +33,15 @@
       align-items: stretch;
       justify-content: center;
     }
+    body.mood-nice {
+      background: radial-gradient(circle at top, rgba(148, 163, 184, 0.4), var(--bg)),
+        url("assets/backgrounds/nice/snowflakes.gif") center top / cover fixed no-repeat;
+    }
+
+    body.mood-naughty {
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), #000000),
+        url("assets/backgrounds/naughty/fire.gif") center top / cover fixed no-repeat;
+    }
 
     .app {
       width: 100%;
@@ -492,7 +501,7 @@
       <section id="view-users" class="view">
         <h2 class="section-title">Santa’s list</h2>
         <p class="section-subtitle">
-          Tap a name to see their wishes, grant gifts, and mark them Naughty or Nice.
+          Tap a name to see their wishes, grant gifts, and cast your Naughty/Nice vote.
         </p>
 
         <div class="btn-row" style="margin-bottom:6px;">
@@ -585,6 +594,25 @@
     let usersCache = []; // full users list for name lookups & naughty/nice
     let currentTargetUser = null; // { user_id, user_name }
 
+    // Mood assets (relative to index.html)
+    const NICE_BG_CLASS = "mood-nice";
+    const NAUGHTY_BG_CLASS = "mood-naughty";
+
+    const NICE_TRACKS = [
+      "assets/music/nice/jingle_bell_rock_major.mp3",
+      "assets/music/nice/jingle_bells_major.mp3",
+      "assets/music/nice/silent_night_major.mp3",
+    ];
+
+    const NAUGHTY_TRACKS = [
+      "assets/music/naughty/jingle_bell_rock_minor.mp3",
+      "assets/music/naughty/jingle_bells_minor.mp3",
+      "assets/music/naughty/silent_night_minor.mp3",
+    ];
+
+    let currentMoodAudio = null;
+    let currentViewId = null;
+
     // ============================
     // UTILS: API
     // ============================
@@ -596,34 +624,92 @@
       return res.json();
     }
 
-async function apiPost(action, body) {
-  const res = await fetch(API_BASE + "?action=" + encodeURIComponent(action), {
-    method: "POST",
-    redirect: "follow", // important for the script.googleusercontent redirect
-    headers: {
-      // text/plain keeps this a "simple" request and avoids CORS preflight
-      "Content-Type": "text/plain;charset=utf-8",
-    },
-    // body is still JSON, just labeled as plain text
-    body: JSON.stringify(body),
-  });
+    async function apiPost(action, body) {
+      const res = await fetch(API_BASE + "?action=" + encodeURIComponent(action), {
+        method: "POST",
+        redirect: "follow", // important for the script.googleusercontent redirect
+        headers: {
+          // text/plain keeps this a "simple" request and avoids CORS preflight
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        // body is still JSON, just labeled as plain text
+        body: JSON.stringify(body),
+      });
 
-  // Read as text first, then parse JSON
-  const text = await res.text();
-  try {
-    return JSON.parse(text);
-  } catch (err) {
-    console.error("Failed to parse JSON from API for action:", action);
-    console.error("Raw response text:", text);
-    throw err;
-  }
-}
+      // Read as text first, then parse JSON
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch (err) {
+        console.error("Failed to parse JSON from API for action:", action);
+        console.error("Raw response text:", text);
+        throw err;
+      }
+    }
 
+    function stopMoodAudio() {
+      if (currentMoodAudio) {
+        try {
+          currentMoodAudio.pause();
+          currentMoodAudio.currentTime = 0;
+        } catch (e) {
+          console.warn("Error stopping mood audio:", e);
+        }
+        currentMoodAudio = null;
+      }
+    }
+
+    function applyMood(isNice) {
+      const body = document.body;
+      // Clear any previous mood
+      body.classList.remove(NICE_BG_CLASS, NAUGHTY_BG_CLASS);
+      stopMoodAudio();
+
+      // If no specific mood (e.g., unknown user), just leave default background
+      if (isNice == null) return;
+
+      // Set background class
+      if (isNice) {
+        body.classList.add(NICE_BG_CLASS);
+      } else {
+        body.classList.add(NAUGHTY_BG_CLASS);
+      }
+
+      // Pick a random track from the appropriate pool
+      const pool = isNice ? NICE_TRACKS : NAUGHTY_TRACKS;
+      if (!pool.length) return;
+
+      const index = Math.floor(Math.random() * pool.length);
+      const src = pool[index];
+
+      try {
+        const audio = new Audio(src);
+        audio.loop = false; // play once, no looping
+        audio.volume = 0.4; // adjust if too loud/quiet
+        currentMoodAudio = audio;
+
+        // This is triggered by a user click (entering the list), so autoplay should be allowed
+        audio.play().catch((err) => {
+          console.warn("Mood audio play was blocked:", err);
+        });
+      } catch (e) {
+        console.warn("Could not start mood audio:", e);
+      }
+    }
 
     // ============================
     // UTILS: VIEWS & STATUS
     // ============================
     function showView(id) {
+      const previousView = currentViewId;
+      currentViewId = id;
+
+      // If we are leaving the individual user list view, reset mood
+      if (previousView === "view-user-list" && id !== "view-user-list") {
+        document.body.classList.remove(NICE_BG_CLASS, NAUGHTY_BG_CLASS);
+        stopMoodAudio();
+      }
+
       document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
       const el = document.getElementById(id);
       if (el) el.classList.add("active");
@@ -751,6 +837,8 @@ async function apiPost(action, body) {
       currentTargetUser = null;
       localStorage.removeItem(STORAGE_USER_ID_KEY);
       localStorage.removeItem(STORAGE_USER_NAME_KEY);
+      document.body.classList.remove(NICE_BG_CLASS, NAUGHTY_BG_CLASS);
+      stopMoodAudio();
       showView("view-login");
       setStatus(
         document.getElementById("login-status"),
@@ -941,18 +1029,18 @@ async function apiPost(action, body) {
       const statusEl = document.getElementById("user-list-status");
       nameEl.textContent = currentTargetUser.user_name + "’s wishes";
 
-      // Compute naughty/nice from latest cache if available
+      // Compute naughty/nice (default to Nice if no user data)
+      let niceInfo = { label: "Nice", isNice: true };
       if (user) {
-        const niceInfo = computeNiceNaughtyFromVotes(
-          user.nice_naughty_vote_list
-        );
-        chipEl.textContent = niceInfo.isNice ? "Nice" : "Naughty";
-        chipEl.classList.remove("chip-nice", "chip-naughty");
-        chipEl.classList.add(niceInfo.isNice ? "chip-nice" : "chip-naughty");
-      } else {
-        chipEl.textContent = "Nice by default";
-        chipEl.classList.remove("chip-nice", "chip-naughty");
+        niceInfo = computeNiceNaughtyFromVotes(user.nice_naughty_vote_list);
       }
+
+      chipEl.textContent = niceInfo.isNice ? "Nice" : "Naughty";
+      chipEl.classList.remove("chip-nice", "chip-naughty");
+      chipEl.classList.add(niceInfo.isNice ? "chip-nice" : "chip-naughty");
+
+      // Apply visual + audio mood
+      applyMood(niceInfo.isNice);
 
       setStatus(statusEl, "", "info");
       showView("view-user-list");
@@ -1133,6 +1221,8 @@ async function apiPost(action, body) {
           chipEl.classList.add(
             niceInfo.isNice ? "chip-nice" : "chip-naughty"
           );
+          // Also update mood in case it changed
+          applyMood(niceInfo.isNice);
         }
 
         setStatus(statusEl, "Your vote has been saved.", "ok");
